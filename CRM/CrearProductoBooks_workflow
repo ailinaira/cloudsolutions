@@ -1,0 +1,99 @@
+/*
+Esta función crea productos en Books a partir de productos en CRM.
+Se debe asociar a un Workflow que se active cada vez que se crea un producto nuevo en CRM.
+
+
+Esta función recibe como argmento el ID del producto en CRM almacenado en idProducto
+*/
+
+//Llenar este dato con el ID de la organización Books
+bookOrgID = 0;
+//boolean tiene que ser true para los casos en que se quiera activar Nros de Serie
+boolean = false;
+
+
+//Traigo el registro de producto CRM y lo almaceno en producto
+producto = zoho.crm.getRecordById("Products",idProducto);
+
+//Se fija si el producto ya existe en Books buscando por nombre
+booksProducts = zoho.books.getRecords("Items",bookOrgID,"name=" + 
+encodeUrl(producto.get("Product_Name")));
+
+//Entra en este if si el producto NO se encontró en Books
+if(booksProducts.get("items").isEmpty())
+{
+    //inventory_account_id a definir por el cliente
+    inventory_account_id = "0";
+
+    item = Map(
+        {"name":producto.get("Product_Name"),
+        "sales_rate":producto.get("Unit_Price"),
+        "sku":producto.get("Product_Code"),
+        "item_type":"inventory",
+        "track_serial_number":boolean,
+        "rate":producto.get("Unit_Price"),
+        "inventory_account_id":inventory_account_id}
+        );
+
+	if(!producto.get("Usage_Unit").isNull() && producto.get("Usage_Unit") != "- None -")
+	{
+		item.put("unit",producto.get("Usage_Unit"));
+	}
+
+    //Se debe descomentar la siguiente línea y llenar la variable si se quiere setear tax
+    tax_id = 0;
+    //item.put("tax_id",tax_id);
+
+	// ========== CATEGORIA DEL PRODUCTO ==========
+    idCategoria = null;
+    url_arm = "https://inventory.zoho.com/api/v1/categories?organization_id=" + bookOrgID.toString();
+
+    //Dentro de connection ingresar el nombre de la conexión CRM-Books
+	categorias = invokeurl
+	[
+		url : url_arm
+        type :GET
+		connection:""
+    ];
+
+	//idBooks = producto.get("ID_BOOKS");
+	if(categorias.get("code") == 0)
+	{
+		info "La respuesta esta OK";
+		for each  categoria in categorias.get("categories")
+		{
+			if(categoria.get("name") == producto.get("Product_Category"))
+			{
+				info "Son iguales";
+				idCategoria = categoria.get("category_id");
+			}
+		}
+		//Tomamos la categoria de la orden de venta y comprobamos si existe alguna. 
+	}
+	else
+	{
+		respuesta = "La categoria no existe en books";
+	}
+
+	if(!idCategoria.isNull())
+	{
+		item.put("category_id",idCategoria);
+    }
+
+	//
+	createItem = zoho.books.createRecord("Items",bookOrgID,item);
+    info createItem;
+
+    /*
+    En el caso de que haya un campo personalizado en CRM con nombre
+    de API ID_BOOKS, descomentar las siguientes líneas
+
+    idBooks = createItem.get("item").get("item_id");
+	update = zoho.crm.updateRecord("Products",idProducto,{"ID_BOOKS":idBooks});
+    info update;
+    */
+}
+else
+{
+	info "El producto ya existe en books";
+}
