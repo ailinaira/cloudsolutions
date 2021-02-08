@@ -1,0 +1,111 @@
+//esto va en controlador de desencadenante
+
+response = Map();
+response.put("replies",{"Hola, buen día!!",{"text":"Mi nombre es Andrea Lischinsky, te puedo ayudar en algo?"}});
+options = {"Si","No"};
+response.put("suggestions",options);
+return response;
+
+
+
+//esto va en controlador de mensajes
+
+response = Map();
+msg = message.get("text");
+// if(msg.equalsIgnoreCase("Si") || msg.equalsIgnoreCase("Cambie de opinión, si necesito ayuda!"))
+//esto lo cambie porque me pidieron que el chatbot continue si escribe cualquiera cosa menos NO
+if(msg != {"no","No","NO","nO"})
+{
+	response.put("action","context");
+	response.put("context_id","information");
+	nombre = {"name":"nombre","replies":{"Es un placer asistirte!",{"text":"Cuál es tu nombre? "}}};
+	apellido = {"name":"apellido","replies":{"Cuál es tu apellido?"}};
+	tipo_de_consulta = {"name":"tipo_de_consulta","replies":{{"text":"Tu consulta es por..."}},"input":{"type":"select","options":{"Tto. ambulatorio","Internación"},"max_selection":"1"}};
+	tipo_de_contacto = {"name":"tipo_de_contacto","replies":{"Perfecto!. Voy a pedirte unos datos a continuación para completar tu consulta",{"text":"Sos paciente o familiar?"}},"input":{"type":"select","options":{"Paciente","Familiar responsable"},"max_selection":"1"}};
+	obra_social = {"name":"obra_social","replies":{{"text":"Decime por favor tu obra social?"}}};
+	//acá se pueden poner las opciones pero no las tengo
+	mail = {"name":"mail","replies":{{"text":"Podrías dejarme tu e.mail? ","field_name":"siq_email","validate":{"format":"email","error":{"Por favor, ingresá un mail valido"}}}}};
+	telefono = {"name":"telefono","replies":{{"text":"Podrías dejarme algún teléfono de contacto?","validate":{"format":"phoneno","error":{"Ingrese un numero de telefono valido"}},"field_name":"siq_phone"}}};
+	consulta = {"name":"consulta","replies":{"Cuál es tu consulta?"}};
+	questions = Collection();
+	questions.insert(nombre);
+	questions.insert(apellido);
+	questions.insert(tipo_de_consulta);
+	questions.insert(tipo_de_contacto);
+	questions.insert(obra_social);
+	questions.insert(mail);
+	questions.insert(telefono);
+	questions.insert(consulta);
+	response.put("questions",questions);
+}
+
+else
+{
+	response.put("action","context");
+	response.put("context_id","nointeresado");
+	ayuda = {"name":"ayuda","replies":{{"text":"Ok, puedo ayudarte si cambiás de opinión 👋"}},"suggestions":{"Cambie de opinión, si necesito ayuda!","Gracias!"}};
+	questions = Collection();
+	questions.insert(ayuda);
+	response.put("questions",questions);
+}
+return response;
+
+
+
+//esto va en controlador de contexto
+
+response = Map();
+if(context_id.equals("information"))
+{
+	nombre = answers.get("nombre").get("text");
+	apellido = answers.get("apellido").get("text");
+	tipo_de_tratamiento = answers.get("tipo_de_consulta").get("text");
+	tipo_de_contacto = answers.get("tipo_de_contacto").get("text");
+	obra_social = answers.get("obra_social").get("text");
+	email = answers.get("mail").get("text");
+	telefono = answers.get("telefono").get("text");
+	tipo_de_tratamiento = answers.get("tipo_de_consulta").get("text");
+	consulta = answers.get("consulta").get("text");
+	name = "Chatbot";
+	crear_contacto = zoho.crm.createRecord("Formularios",{"Name":name,"Nombre":nombre,"Apellido":apellido,"Tipo_de_consulta":tipo_de_tratamiento,"Tipo_de_contacto":tipo_de_contacto,"Obra_social":obra_social,"Email":email,"M_vil":telefono,"Consulta":consulta},{"trigger":{"workflow"}});
+	response.put("replies",{"Muchas gracias!",{"text":"Ya tengo el motivo de tu consulta y tu contacto"},{"text":"Dentro de las próximas 24hs hábiles me estaré contactando telefónicamente con vos"}});
+	response.put("action","end");
+}
+else if(context_id.equals("nointeresado"))
+{
+	ayuda = answers.get("ayuda").get("text");
+	if(ayuda.equalsIgnoreCase("Gracias!"))
+	{
+		response.put("replies",{"Cualquier duda escribinos a info@institutoimar.com.ar o comunicate al 54.221.422-1129",{"text":"Que tengas un buen dia!👋"}});
+		response.put("action","end");
+	}
+	else
+	{
+		response.put("action","context");
+		response.put("context_id","information");
+		nombre = {"name":"nombre","replies":{"Es un placer asistirte!",{"text":"Cuál es tu nombre? "}}};
+		apellido = {"name":"apellido","replies":{"Cuál es tu apellido?"}};
+		tipo_de_consulta = {"name":"tipo_de_consulta","replies":{{"text":"Tu consulta es por..."}},"input":{"type":"select","options":{"Tto. ambulatorio","Internación"},"max_selection":"1"}};
+		tipo_de_contacto = {"name":"tipo_de_contacto","replies":{"Perfecto!. Voy a pedirte unos datos a continuación para completar tu consulta",{"text":"Sos paciente o familiar?"}},"input":{"type":"select","options":{"Paciente","Familiar responsable"},"max_selection":"1"}};
+		obra_social = {"name":"obra_social","replies":{{"text":"Decime por favor tu obra social?"}}};
+		//acá se pueden poner las opciones pero no las tengo
+		mail = {"name":"mail","replies":{{"text":"Podrías dejarme tu e.mail? ","field_name":"siq_email","validate":{"format":"email","error":{"Por favor, ingresá un mail valido"}}}}};
+		telefono = {"name":"telefono","replies":{{"text":"Podrías dejarme algún teléfono de contacto?","validate":{"format":"phoneno","error":{"Ingrese un numero de telefono valido"}},"field_name":"siq_phone"}}};
+		consulta = {"name":"consulta","replies":{"Cuál es tu consulta?"}};
+		questions = Collection();
+		questions.insert(nombre);
+		questions.insert(apellido);
+		questions.insert(tipo_de_consulta);
+		questions.insert(tipo_de_contacto);
+		questions.insert(obra_social);
+		questions.insert(mail);
+		questions.insert(telefono);
+		questions.insert(consulta);
+		response.put("questions",questions);
+	}
+}
+return response;
+
+
+//en controlador de errores deberia ir la lógica para manejar las excepciones, yo no la hice para este
+//caso, pero asegurarse de poner el return para que funcione el resto de las cosas
